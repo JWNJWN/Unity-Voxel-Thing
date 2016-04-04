@@ -97,6 +97,7 @@ public class World : MonoBehaviour {
 
             yield return Ninja.JumpBack;
             TempChunkScript.world = this;
+            TempChunkScript.ChunkPosition = TempPos;
             this.StartCoroutineAsync(GenerateChunk(TempChunkScript), out GenerationTask);
             yield return StartCoroutine(GenerationTask.Wait());
             Logger.Log(this, "Fetching Started");

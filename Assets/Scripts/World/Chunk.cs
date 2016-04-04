@@ -44,7 +44,6 @@ public class Chunk : MonoBehaviour {
     void Start()
     {
         //InitSurroundingChunks();
-        StartCoroutine(RenderThing());
     }
 
     void InitSurroundingChunks()
@@ -70,6 +69,8 @@ public class Chunk : MonoBehaviour {
             rendered = false;
             UpdateSurroundingChunks();
         }
+        if (!rendered)
+            StartCoroutine(RenderThing());
     }
 
     public void AddVoxel(int x, int y, int z, Voxel voxel)
@@ -128,13 +129,13 @@ public class Chunk : MonoBehaviour {
     IEnumerator RenderThing()
     {
         Task task;
-        if(!IsSolid && !rendered)
+        if(generated)
         {
+            rendered = true;
             this.StartCoroutineAsync(ProcessMesh(), out task);
             yield return StartCoroutine(task.Wait());
             tempMesh = world.renderer.ToMesh(tempMesh);
             UpdateMesh();
-            rendered = true;
         }
     }
 
