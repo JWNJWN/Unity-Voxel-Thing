@@ -11,28 +11,36 @@ public class World : MonoBehaviour {
     public int minSize = 256;
 
     public Vector3 chunkGenerationPos;
-    OctreeWorldGeneration generator;
+
+    private Queue<Vector3> ChunksToGenerate = new Queue<Vector3>();
+
+    WorldGeneration generator;
     public bool generate = true;
 
     public GameObject chunkPrefab;
-
-    public bool rendered = false;
-
-    public new IRenderer renderer;
     public bool march = false;
 
     void Awake()
     {
-        renderer = new OctreeBlockRenderer();
-        generator = new OctreeWorldGeneration();
         chunks = new Octree<Chunk>(worldSize, Vector3.zero, minSize);
+        ChunksToGenerate = new Queue<Vector3>();
     }
 
     void Start()
     {
+        for (int x = 0; x < 1; x++)
+        {
+            for (int y = 0; y < 1; y++)
+            {
+                for (int z = 0; z < 1; z++)
+                {
+                    AddChunk(x, y, z);
+                }
+            }
+        }
     }
 
-    void Update()
+    void FixedUpdate()
     {
         /*if(march)
         {
@@ -43,9 +51,10 @@ public class World : MonoBehaviour {
             renderer = new OctreeBlockRenderer();
         }*/
 
-        renderer.Initialize();
-        if(generate)
-            StartCoroutine(CreateChunk());
+        if (generate)
+            AddChunk(chunkGenerationPos);
+
+        StartCoroutine(CreateChunk());
     }
 
     public Voxel GetVoxel(int x, int y, int z)
@@ -81,38 +90,54 @@ public class World : MonoBehaviour {
         return chunks.Get(pos.x, pos.y, pos.z);
     }
 
+    public void AddChunk(int x, int y, int z)
+    {
+        generate = false;
+        ChunksToGenerate.Enqueue(new Vector3(x, y, z));
+    }
+
+    public void AddChunk(Vector3 pos)
+    {
+        generate = false;
+        ChunksToGenerate.Enqueue(pos);
+    }
+
     IEnumerator CreateChunk()
     {
         Task GenerationTask;
-        if (generate)
+        Vector3[] TempPositions = new Vector3[ChunksToGenerate.Count];
+        ChunksToGenerate.CopyTo(TempPositions, 0);
+        ChunksToGenerate.Clear();
+
+        foreach(Vector3 pos in TempPositions)
         {
-            generate = false;
-            WorldPos TempPos = new WorldPos((int)chunkGenerationPos.x * Chunk.ChunkSize, (int)chunkGenerationPos.y * Chunk.ChunkSize, (int)chunkGenerationPos.z * Chunk.ChunkSize);
-            yield return Ninja.JumpToUnity;
+            if (chunks.Get(pos) == null)
+            {
+                generator = new WorldGeneration();
+                WorldPos TempPos = new WorldPos((int)pos.x * Chunk.ChunkSize, (int)pos.y * Chunk.ChunkSize, (int)pos.z * Chunk.ChunkSize);
 
-            GameObject TempChunkObject = Instantiate(chunkPrefab) as GameObject;
-            TempChunkObject.transform.SetParent(this.transform);
-            TempChunkObject.name = TempPos.ToString();
-            Chunk TempChunkScript = TempChunkObject.GetComponent<Chunk>();
+                yield return Ninja.JumpToUnity;
 
-            yield return Ninja.JumpBack;
-            TempChunkScript.world = this;
-            TempChunkScript.ChunkPosition = TempPos;
-            this.StartCoroutineAsync(GenerateChunk(TempChunkScript), out GenerationTask);
-            yield return StartCoroutine(GenerationTask.Wait());
-            Logger.Log(this, "Fetching Started");
-            TempChunkScript = generator.FetchChunk();
-            Logger.Log(this, "Fetching Finished");
+                GameObject TempChunkObject = Instantiate(chunkPrefab) as GameObject;
+                TempChunkObject.transform.SetParent(this.transform);
+                TempChunkObject.name = TempPos.ToString();
+                Chunk TempChunkScript = TempChunkObject.GetComponent<Chunk>();
 
-            chunks.Add(TempChunkScript, TempPos.ToVector3());
+                yield return Ninja.JumpBack;
+
+                TempChunkScript.world = this;
+                TempChunkScript.ChunkPosition = TempPos;
+                this.StartCoroutineAsync(GenerateChunk(TempChunkScript), out GenerationTask);
+                yield return StartCoroutine(GenerationTask.Wait());
+                generator.FetchChunk(out TempChunkScript);
+                chunks.Add(TempChunkScript, TempPos.ToVector3());
+            }
         }
     }
 
     IEnumerator GenerateChunk(Chunk chunk)
     {
-        Logger.LogAsync("Generation Started");
         generator.Generate(this, chunk);
-        Logger.LogAsync("Generation Ended");
         yield break;
     }
 

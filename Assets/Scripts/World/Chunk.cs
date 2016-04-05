@@ -33,12 +33,16 @@ public class Chunk : MonoBehaviour {
     public bool Points = false;
     public bool Bounds = false;
 
+    private IRenderer renderer;
+
     void Awake()
     {
-        voxels = new Octree<Voxel>(ChunkSize, ChunkPosition.ToVector3(), 8);
+        voxels = new Octree<Voxel>(ChunkSize, new Vector3(ChunkPosition.x + ChunkSize/2, ChunkPosition.y + ChunkSize/2, ChunkPosition.z + ChunkSize/2), 8);
         filter = gameObject.GetComponent<MeshFilter>();
         coll = gameObject.GetComponent<MeshCollider>();
         ChunkVolume = ChunkSize * ChunkSize * ChunkSize;
+        renderer = new OctreeBlockRenderer();
+        renderer.Initialize();
     }
 
     void Start()
@@ -134,16 +138,14 @@ public class Chunk : MonoBehaviour {
             rendered = true;
             this.StartCoroutineAsync(ProcessMesh(), out task);
             yield return StartCoroutine(task.Wait());
-            tempMesh = world.renderer.ToMesh(tempMesh);
+            tempMesh = renderer.ToMesh(tempMesh);
             UpdateMesh();
         }
     }
 
     IEnumerator ProcessMesh()
     {
-        Logger.LogAsync("Starting Render Calculations");
-        world.renderer.Render(world, this);
-        Logger.LogAsync("Finished Render Calculations");
+        renderer.Render(world, this);
         yield break;
     }
 

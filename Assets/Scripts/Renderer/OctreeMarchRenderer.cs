@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class OctreeMarchRenderer 
+public class OctreeMarchRenderer : IRenderer
 {
     private World world;
     private Chunk chunk;
@@ -313,20 +313,20 @@ public class OctreeMarchRenderer
 
     private bool Corner(int x, int y, int z)
     {
-        bool[] voxes = new bool[6];
+        Voxel[] voxes = new Voxel[6];
 
-        voxes[0] = voxels.Contains(new Vector3(x + 1, y, z));
-        voxes[1] = voxels.Contains(new Vector3(x - 1, y, z));
-        voxes[2] = voxels.Contains(new Vector3(x, y + 1, z));
-        voxes[3] = voxels.Contains(new Vector3(x, y - 1, z));
-        voxes[4] = voxels.Contains(new Vector3(x, y, z + 1));
-        voxes[5] = voxels.Contains(new Vector3(x, y, z - 1));
+        voxes[0] = chunk.GetVoxel(x + 1, y, z);
+        voxes[1] = chunk.GetVoxel(x - 1, y, z);
+        voxes[2] = chunk.GetVoxel(x, y + 1, z);
+        voxes[3] = chunk.GetVoxel(x, y - 1, z);
+        voxes[4] = chunk.GetVoxel(x, y, z + 1);
+        voxes[5] = chunk.GetVoxel(x, y, z - 1);
 
         int CellIndex = 0;
 
         for(int i=0;i< voxes.Length;i++)
         {
-            if(voxes[i])
+            if(voxes[i] != null)
                 CellIndex += (int)Mathf.Pow(2, i);
         }
         if (CellIndex == Mathf.Pow(2, voxes.Length) - 1)
@@ -341,7 +341,6 @@ public class OctreeMarchRenderer
 
         meshData.Clear();
         Voxel voxel;
-        Debug.Log(Time.realtimeSinceStartup);
         voxels = new HashSet<Vector3>(chunk.voxels.GetPositions());
 
         foreach (Vector3 vox in voxels)

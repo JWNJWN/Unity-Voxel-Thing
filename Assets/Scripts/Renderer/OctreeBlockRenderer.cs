@@ -71,7 +71,7 @@ public class OctreeBlockRenderer : IRenderer
 
         if (mesh == null)
             mesh = new Mesh();
-        
+
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
 

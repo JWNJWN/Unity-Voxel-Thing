@@ -14,9 +14,9 @@ public class OctreeWorldGeneration {
     private Chunk chunk;
     private World world;
 
-    public Chunk FetchChunk()
+    public void FetchChunk(out Chunk chunk)
     {
-        return chunk;
+        chunk = this.chunk;
     }
 
     public void Generate(World world, Chunk chunk)
@@ -47,7 +47,8 @@ public class OctreeWorldGeneration {
                 {
                     if (y <= stoneHeight)
                     {
-                        chunk.AddVoxel(x, y, z, new Voxel());
+                        if(chunk.GetVoxel(x,y,z) == null)
+                            chunk.AddVoxel(x, y, z, new Voxel());
                     }
 
                 }
